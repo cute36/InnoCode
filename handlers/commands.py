@@ -3,10 +3,15 @@ from aiogram import filters
 from aiogram import  types
 from aiogram import F
 import random
+
+from handlers.source.texts import start_message,help_text,about_text
 from keyboards import inline
-from aiogram.types import ReplyKeyboardRemove,ReplyKeyboardMarkup
+from aiogram.types import ReplyKeyboardRemove,FSInputFile, Message, User, Sticker, Contact, Document, PhotoSize
 from urllib.parse import urlparse
 import re
+# import SRC
+from handlers.source import texts
+
 
 from keyboards.reply import format_keyboard
 
@@ -14,73 +19,16 @@ command_router = Router()
 
 @command_router.message(filters.Command("start"))
 async def handler_start(s: types.Message) -> None:
-    start_message = """
-    🖐 <b>Добро пожаловать, {user_name}!</b>
-
-    Я - многофункциональный бот, который поможет вам:
-
-    📥 <b>Скачать видео</b> с популярных платформ:
-    • YouTube (включая Shorts)
-    • TikTok 
-    • Soundcloud
-    • VK и другие
-
-    🆔 <b>Получить ID</b> любого объекта в Telegram:
-    • Юзернеймы (@nickname)
-    • Стикеры и медиа
-    • Чаты и сообщения
-    
-    📢 <b>Подписывайтесь на наш канал:</b>
-    👉  <a href="https://t.me/uroduzhir">вандалы325</a> 👈
-
-    Выберите действие ниже ⤵️
-    """.format(
-        user_name=s.from_user.first_name,
-        channel_link="https://t.me/uroduzhir"  #ссылка на канал
-    )
-    await s.answer(text=start_message,reply_markup=inline.start_keyboard, parse_mode="HTML")
+    photo = FSInputFile("SRC/start2.jpg")
+    await s.answer_photo(photo,caption=start_message(s.from_user),reply_markup=inline.start_keyboard, parse_mode="HTML")
 
 @command_router.message(filters.Command("about"))
 async def handler_about(a: types.Message) -> None:
-    about_text = """
-    <b>📌 VandalDownloader</b> — бот для скачивания видео и аудио с YouTube и других платформ.
 
-    <b>🌟 Возможности:</b>
-    ✅ Скачивание видео (MP4).
-    ✅ Конвертация в MP3.
-    ✅ Поддержка популярных сайтов.
-
-    <b>📢 Как пользоваться?</b>
-    1. Отправьте ссылку.
-    2. Выберите формат.
-    3. Получите файл!
-
-    <b>📢 Наш канал:</b> 
-👉 <a href="https://t.me/uroduzhir">вандалы325</a> 👈
-        
-    """
     await a.answer(text=about_text,parse_mode="HTML")
 
 @command_router.message(filters.Command("help"))
 async def handler_about(h: types.Message) -> None:
-    help_text = """
-    <b>🆘 Помощь по использованию бота</b>
-
-    📌 <b>Основные команды:</b>
-    ├ /start - Начать работу с ботом
-    ├ /help - Показать это сообщение
-    └ /about - Информация о боте и его возможностях
-
-    📥 <b>Как скачать видео/аудио?</b>
-    1. Просто отправьте ссылку на видео (YouTube, TikTok и др.)
-    2. Бот автоматически определит источник
-    3. Выберите формат (MP4 или MP3)
-    4. Получите файл через 15-60 секунд!
-
-    ⚠️ <b>Важно:</b>
-    • Максимальный размер файла - 50MB
-    • Для больших видео доступно сжатие
-    """
     await h.answer(text=help_text, reply_markup=inline.help_keyboard, parse_mode="HTML")
 
 
@@ -184,4 +132,6 @@ async def handle_links(message: types.Message)->None:
     - MP4▶️
     """
     await message.answer(text=text_ans,parse_mode="HTML",reply_markup=format_keyboard)
+
+
 
