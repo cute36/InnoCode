@@ -3,7 +3,6 @@ from aiogram import filters
 from aiogram import  types
 from aiogram import F
 import random
-
 from handlers.source.texts import start_message,help_text,about_text
 from keyboards import inline
 from aiogram.types import ReplyKeyboardRemove,FSInputFile, Message, User, Sticker, Contact, Document, PhotoSize
@@ -11,7 +10,7 @@ from urllib.parse import urlparse
 import re
 # import SRC
 from handlers.source import texts
-
+from keyboards.inline import escape_keyboard
 
 from keyboards.reply import format_keyboard
 
@@ -89,6 +88,11 @@ async def handler_mp4(text: types.Message):
         """
     await text.answer(text=text_mp4,parse_mode="HTML",reply_markup=ReplyKeyboardRemove())
 
+
+
+### ЛОГИКА ПРОВЕРКИ ВАЛИДНОСТИ ССЫЛОК ###
+
+
 def is_valid_url(url: str) -> bool:
     try:
         result = urlparse(url)
@@ -127,11 +131,56 @@ async def handle_links(message: types.Message)->None:
     valid_url = user_url #ГОТОВАЯ ССЫЛКА
     text_ans = """
 🔎 <b>Анализирую ссылку...</b>
-    <b>Выберите формат:</b> 
-    - MP3▶️ 
+    <b>Выберите формат:</b>
+    - MP3▶️
     - MP4▶️
     """
     await message.answer(text=text_ans,parse_mode="HTML",reply_markup=format_keyboard)
+
+### ЛОГИКА ДЛЯ ПОЛУЧЕНИЯ ID ###
+
+# @command_router.message(content_types=types.ContentType.ANY)
+# async def handle_id_request(message: types.Message):
+#     response = "🆔 <b>Результат:</b>\n"
+#
+#     # 1. Обработка юзернеймов (@username)
+#     if message.text and message.text.startswith('@'):
+#         username = message.text[1:].split()[0]  # Извлекаем юзернейм без @
+#         try:
+#             user = await message.bot.get_chat(f"@{username}")
+#             response += f"• Юзернейм @{username} → <code>user_id: {user.id}</code>\n"
+#         except Exception as e:
+#             response += f"⚠️ Не удалось найти ID для @{username}\n"
+#
+#     # 2. Пересланные сообщения
+#     elif message.forward_from:
+#         user = message.forward_from
+#         response += f"• Переслано от → <code>user_id: {user.id}</code>\n"
+#         if user.username:
+#             response += f"  Юзернейм → @{user.username}\n"
+#
+#     elif message.forward_from_chat:
+#         chat = message.forward_from_chat
+#         response += f"• {chat.type.capitalize()} → <code>chat_id: {chat.id}</code>\n"
+#         if chat.username:
+#             response += f"  Юзернейм → @{chat.username}\n"
+#
+#     # 3. Медиафайлы
+#     elif message.sticker:
+#         response += f"• Стикер {message.sticker.emoji} → <code>file_id: {message.sticker.file_id}</code>\n"
+#
+#     elif message.content_type in ['photo', 'video', 'document']:
+#         file_id = {
+#             'photo': message.photo[-1].file_id,
+#             'video': message.video.file_id,
+#             'document': message.document.file_id
+#         }[message.content_type]
+#         response += f"• {message.content_type.capitalize()} → <code>file_id: {file_id}</code>\n"
+#
+#     # 4. Информация о текущем чате/пользователе
+#     response += f"\n📌 <i>Ваш ID</i> → <code>{message.from_user.id}</code>"
+#
+#     await message.reply(response, parse_mode="HTML",reply_markup=inline.escape_keyboard)
 
 
 
