@@ -1,5 +1,5 @@
 from aiogram.types import InlineKeyboardButton,InlineKeyboardMarkup
-
+from pyrogram.filters import inline_keyboard
 
 CHANNEL_LINK = "https://t.me/uroduzhir"  # Ссылка
 
@@ -21,7 +21,7 @@ start_keyboard = InlineKeyboardMarkup(
              InlineKeyboardButton(text="🖐Наш канал",url="https://t.me/uroduzhir")
          ],
          [
-             InlineKeyboardButton(text="Помошь🙋‍♂️",callback_data="help_pressed"),
+             InlineKeyboardButton(text="Помощь🙋‍♂️",callback_data="help_pressed"),
              InlineKeyboardButton(text="О проекте❓",callback_data="about_pressed"),
              InlineKeyboardButton(text="Отзыв🙌",url="https://t.me/vandal_325")
          ]
@@ -67,5 +67,26 @@ format_keyboard =InlineKeyboardMarkup(
             InlineKeyboardButton(text="Назад❌",callback_data="escape_caption_pressed")
         ]
 
+    ]
+)
+
+id_keyboard =InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="МОЙ🆔", callback_data="user_id"),
+            InlineKeyboardButton(text="СТИКЕР🆔",callback_data="sticker_id"),
+            InlineKeyboardButton(text="ФОТО🆔",callback_data="photo_id")
+        ],
+        [
+            InlineKeyboardButton(text="Назад❌",callback_data="escape_caption_pressed")
+        ]
+    ]
+
+)
+escape_id=InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Назад❌",callback_data="escape_id")
+        ]
     ]
 )

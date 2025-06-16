@@ -7,3 +7,8 @@ class Download(StatesGroup):
 
 class ID(StatesGroup):
     wait_id = State()
+
+class Sticker(StatesGroup):
+    waiting_for_sticker = State()
+class Photo(StatesGroup):
+    waiting_for_photo = State()

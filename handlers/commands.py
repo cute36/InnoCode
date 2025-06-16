@@ -2,14 +2,17 @@ from aiogram import Router
 from aiogram import filters
 from aiogram import  types
 from aiogram import F,Bot
+# from pyrogram import Client
 from typing import Union, Dict, Optional, List
 import random
 from handlers.source.texts import start_message,help_text,about_text
 from keyboards import inline
+from functools import wraps
 from aiogram.types import ReplyKeyboardRemove,FSInputFile, Message, User, Sticker, Contact, Document, PhotoSize
 from urllib.parse import urlparse
 import re
 from states import Download,ID
+from aiogram.enums import ContentType
 from aiogram.fsm.context import FSMContext
 # import SRC
 from handlers.source import texts
@@ -56,7 +59,7 @@ async def handler_hi(text: types.Message) -> None:
     ]
     await text.answer(text=random.choice(greetings))
 
-@command_router.message(F.sticker)
+#@command_router.message(F.sticker)
 async def handler_sticker(text: types.Message):
     stickers = ["CAACAgIAAxkBAAOzaEwXDe9UAdcrvLIr9ka4tEffeMIAAtRcAAL_l2BKM4F7hnvAn-E2BA","CAACAgIAAxkBAAO1aEwXEEHTnaw_rmqgNbgO6ALrdQ8AAiRaAAJaUGFKk-Tak4_7Tag2BA","CAACAgIAAxkBAAO3aEwXEp_tIKxaSUf94QKUyp7jYsAAApBZAALY1GFKurbeu8UknXE2BA","CAACAgIAAxkBAAO5aEwXEywNfBzU6eNBllgoa-eHy20AAp5YAAIvDGBKCYbdO1qw2zo2BA","CAACAgIAAxkBAAO7aEwXFHrWSB4JjfEoylOpY_XGSBgAAv1dAAL0KWBKsErb7eNo7FI2BA","CAACAgIAAxkBAAO9aEwXFfafmW3z-NmnUwjy6qf9PakAAnlZAAIqaGFKVbQ1ypMu0N42BA","CAACAgIAAxkBAAO_aEwXFlNwZTPPm_8t_1HfZON1tboAAnNaAAJwtWFKW8ChVXuZ3ko2BA","CAACAgIAAxkBAAPBaEwXGOZFYtZg8h3KLDY3wkMKdTwAArpaAALunmhKisyIr6qxwuc2BA","CAACAgIAAxkBAAPDaEwXGZgwT30aF-lkKySVMi9XK2AAAgZZAALjmWBKG5vAPipLfuo2BA","CAACAgIAAxkBAAPFaEwXGtwYuVI0zm23QCMu8-4z4sYAArReAAIdJWhK_oyTwfJtE7s2BA","CAACAgIAAxkBAAPHaEwXG4wJt2yhYe1aA_Prlu2fMegAAp1eAAJrYWBK5gE4XU8C02Q2BA","CAACAgIAAxkBAAPJaEwXG1vJX0t7e5_vwxUYbmrolaoAAjteAAIPwWBKVHlUVG-vuFU2BA","CAACAgIAAxkBAAPLaEwXHAvEQAcUTR-CAAG7kDGbQb3YAAK1WgACAQZgSk5Q2YTbVWboNgQ","CAACAgIAAxkBAAPNaEwXHfroK4aw99GIn_O_sXv9L-cAAgphAAK5RWBKft4qfrpg9RU2BA","CAACAgIAAxkBAAPPaEwXHzG0GotsQ67Z5X1-E-p0BcwAAidtAAOn8Eu99IZh1I0pTzYE","CAACAgIAAxkBAAPRaEwXIHrmuAABAqlTonDm3Xru0dtvAAIGaQACcbTxS2Z3MjBm1jMgNgQ","CAACAgIAAxkBAAPTaEwXIG0cELLv4H2ugctGCdSE1wkAAvNhAAK-HfBLfNUk3DQ-aVk2BA","CAACAgIAAxkBAAPVaEwXIRswTB24wZr0bu-1C3pOqcgAAnt-AAKUT_FLewydwp-iTLY2BA","CAACAgIAAxkBAAPXaEwXIoC_8ZTdMn18mlV77ctnycYAAihsAAJZ0_BL44baC4-Mghc2BA"]
     await text.answer_sticker(random.choice(stickers))
@@ -145,6 +148,18 @@ async def handle_links(message: types.Message,state: FSMContext)->None:
 
 
 ### ЛОГИКА ДЛЯ ПОЛУЧЕНИЯ ID ###
+
+# async def find_user_by_username(username: str):
+#     api_id = 12345  # Ваш API ID (получить на my.telegram.org)
+#     api_hash = "ваш_api_hash"  # Ваш API Hash
+#
+#     async with Client("my_account", api_id, api_hash) as app:
+#         try:
+#             user = await app.get_users(username)
+#             return user
+#         except Exception as e:
+#             return None
+
 
 
 
