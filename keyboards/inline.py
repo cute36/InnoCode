@@ -1,6 +1,8 @@
 from aiogram.types import InlineKeyboardButton,InlineKeyboardMarkup
 
 
+CHANNEL_LINK = "https://t.me/uroduzhir"  # Ссылка
+
 help_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[
         [
@@ -42,5 +44,28 @@ escape_keyboard_caption = InlineKeyboardMarkup(
         [
             InlineKeyboardButton(text="Назад❌",callback_data="escape_caption_pressed")
         ]
+    ]
+)
+
+subscription_keyboard = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="ПОДПИСАТЬСЯ🔔",url=CHANNEL_LINK)
+        ],
+        [
+            InlineKeyboardButton(text="Проверить подписку✅",callback_data="check_sub")
+        ]
+    ]
+)
+format_keyboard =InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="▶️MP4",callback_data="mp4"),
+            InlineKeyboardButton(text="▶️MP3",callback_data="mp3")
+        ],
+        [
+            InlineKeyboardButton(text="Назад❌",callback_data="escape_caption_pressed")
+        ]
+
     ]
 )
