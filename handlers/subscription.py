@@ -6,6 +6,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import ReplyKeyboardRemove,FSInputFile, Message, User, Sticker, Contact, Document, PhotoSize
 from handlers.source.texts import start_message,help_text,about_text
 from keyboards import inline
+from id_database import add_user
+from aiogram.fsm.context import FSMContext
 router = Router()
 
 # Настройки канала
@@ -49,8 +51,15 @@ class SubscriptionMiddleware:
 
 
 @router.message(Command("start"))
-async def cmd_start(message: Message, bot: Bot):
+async def cmd_start(message: Message, bot: Bot,state: FSMContext):
     try:
+        # Добавляем пользователя в БД (без is_bot)
+        add_user(
+            user_id=message.from_user.id,
+            username=message.from_user.username,
+            first_name=message.from_user.first_name
+        )
+
         member = await bot.get_chat_member(CHANNEL_ID, message.from_user.id)
         if member.status in ['member', 'administrator', 'creator']:
             photo = FSInputFile("SRC/start2.jpg")
@@ -58,11 +67,20 @@ async def cmd_start(message: Message, bot: Bot):
             return
     except Exception as e:
         print(f"Error: {e}")
+        # Повторно добавляем в БД в случае ошибки
+        add_user(
+            user_id=message.from_user.id,
+            username=message.from_user.username,
+            first_name=message.from_user.first_name
+        )
+
 
     await message.answer(
         f"Для использования бота подпишитесь на канал {CHANNEL_USERNAME}",
         reply_markup=inline.subscription_keyboard
     )
+    await state.clear()
+
 
 
 @router.callback_query(F.data == "check_sub")
@@ -94,7 +112,7 @@ async def check_access(message: Message, bot: Bot):
 
     await message.answer(
         "❌ Доступ запрещён. Подпишитесь на канал:",
-        reply_markup=subscription_keyboard()
+        reply_markup=inline.subscription_keyboard
     )
 
 

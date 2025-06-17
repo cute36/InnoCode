@@ -78,6 +78,9 @@ id_keyboard =InlineKeyboardMarkup(
             InlineKeyboardButton(text="ФОТО🆔",callback_data="photo_id")
         ],
         [
+            InlineKeyboardButton(text="ЧУЖОЙ🆔",callback_data="another_id")
+        ],
+        [
             InlineKeyboardButton(text="Назад❌",callback_data="escape_caption_pressed")
         ]
     ]
@@ -87,6 +90,14 @@ escape_id=InlineKeyboardMarkup(
     inline_keyboard=[
         [
             InlineKeyboardButton(text="Назад❌",callback_data="escape_id")
+        ]
+    ]
+)
+
+start=InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="Начать!",callback_data="start")
         ]
     ]
 )

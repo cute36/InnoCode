@@ -9,11 +9,16 @@ from keyboards import reply
 from handlers.source.texts import start_message,download_prompts,get_id_prompts,help_text,about_text
 from keyboards.inline import escape_keyboard, start_keyboard, escape_keyboard_caption
 from aiogram.types import FSInputFile
-from states import Download,ID,Sticker,Photo
-
+from states import Download,ID,Sticker,Photo,UsernameStates
+from id_database import get_user_by_username,save_user_to_db
 
 callback_router = Router()
 
+@callback_router.callback_query(F.data == "start")
+async def handle_cancel(callback: aiogram.types.CallbackQuery,state: FSMContext):
+    await callback.answer("Начинаем...")
+    await callback.message.edit_text(text=start_message(callback.from_user),parse_mode="HTML",reply_markup=start_keyboard)
+    await state.clear()
 
 @callback_router.callback_query(F.data == "download_pressed")
 async def handle_download(callback: aiogram.types.CallbackQuery,state: FSMContext):
@@ -206,7 +211,85 @@ async def handle_non_photo_input(message: types.Message):
     # Отправляем предупреждение, которое само удалится через 5 секунд
     await message.answer(
         "⚠️ Пожалуйста, отправьте именно фото\n"
-        "Используйте кнопку '📷' в меню",
+        "Используйте кнопку '📎' в меню",
         reply_markup=inline.escape_id
     )
+
+### ИНФА ЧУЖОГО ИЮЗЕРНЕМЙА####
+
+@callback_router.callback_query(F.data == "another_id")
+async def request_photo_info(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.edit_text(
+        "Отправьте мне юзернейм и я покажу информацию о нём:",
+        reply_markup=inline.escape_id
+    )
+    await state.set_state(UsernameStates.waiting_for_username)
+    await callback.answer()
+
+
+@callback_router.message(UsernameStates.waiting_for_username, F.text)
+async def handle_username_input(message: types.Message, state: FSMContext):
+    username = message.text.strip().lstrip('@')  # Удаляем @ если есть
+
+    # Сначала проверяем в базе данных
+    user_from_db = get_user_by_username(username)
+
+    if user_from_db:
+        # Если пользователь найден в базе
+        response = (
+            "📋 <b>Информация из базы данных:</b>\n"
+            f"├ 🆔 <b>ID:</b> <code>{user_from_db[0]}</code>\n"
+            f"├ 📛 <b>Имя:</b> {user_from_db[2]}\n"
+            f"└ @ <b>Юзернейм:</b> @{user_from_db[1]}\n\n"
+            f"ℹ️ Это локальные данные из нашей базы"
+        )
+        await message.reply(response, parse_mode="HTML", reply_markup=inline.escape_id)
+        return
+
+    try:
+        # Если нет в базе, запрашиваем у Telegram
+        chat = await message.bot.get_chat(f"@{username}")
+
+        response = (
+            "👤 <b>Информация о пользователе:</b>\n"
+            f"├ 🆔 <b>ID:</b> <code>{chat.id}</code>\n"
+            f"├ 📛 <b>Имя:</b> {chat.full_name}\n"
+            f"├ @ <b>Юзернейм:</b> @{chat.username}\n"
+            f"└ 🤖 <b>Бот:</b> {'Да' if chat.is_bot else 'Нет'}\n\n"
+            f"ℹ️ Эти данные получены от Telegram и могут быть не трушными..."
+        )
+
+        await message.reply(response, parse_mode="HTML", reply_markup=inline.escape_id)
+
+        # Сохраняем пользователя в базу данных
+        save_user_to_db(
+            user_id=chat.id,
+            username=chat.username,
+            first_name=chat.full_name,
+            is_bot=chat.is_bot
+        )
+
+    except Exception as e:
+        await message.reply(
+            f"❌ Не удалось найти пользователя @{username}\n"
+            f"Ошибка: {str(e)}",
+            reply_markup=inline.escape_id
+        )
+
+
+
+
+# Обработчик не-юзернейма в состоянии ожидания
+@callback_router.message(UsernameStates.waiting_for_username)
+async def handle_non_username_input(message: types.Message):
+    try:
+        await message.delete()
+    except:
+        pass
+
+    warning = await message.answer(
+        "⚠️ Пожалуйста, отправьте юзернейм (например, @username)",
+        reply_markup=inline.escape_id
+    )
+
 

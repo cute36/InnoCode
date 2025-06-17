@@ -12,3 +12,5 @@ class Sticker(StatesGroup):
     waiting_for_sticker = State()
 class Photo(StatesGroup):
     waiting_for_photo = State()
+class UsernameStates(StatesGroup):
+    waiting_for_username = State()  # Состояние ожидания юзернейма

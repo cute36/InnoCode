@@ -1,9 +1,7 @@
 from aiogram import Router
 from aiogram import filters
 from aiogram import  types
-from aiogram import F,Bot
-# from pyrogram import Client
-from typing import Union, Dict, Optional, List
+from aiogram import F
 import random
 from handlers.source.texts import start_message,help_text,about_text
 from keyboards import inline
@@ -22,42 +20,22 @@ from keyboards.inline import escape_keyboard
 
 command_router = Router()
 
+
+
 #@command_router.message(filters.Command("start"))
 async def handler_start(s: types.Message) -> None:
     photo = FSInputFile("SRC/start2.jpg")
     await s.answer_photo(photo,caption=start_message(s.from_user),reply_markup=inline.start_keyboard, parse_mode="HTML")
 
 @command_router.message(filters.Command("about"))
-async def handler_about(a: types.Message) -> None:
-
+async def handler_about(a: types.Message,state: FSMContext) -> None:
     await a.answer(text=about_text,parse_mode="HTML")
+    await state.clear()
 
 @command_router.message(filters.Command("help"))
-async def handler_about(h: types.Message) -> None:
+async def handler_about(h: types.Message,state: FSMContext) -> None:
     await h.answer(text=help_text, reply_markup=inline.help_keyboard, parse_mode="HTML")
-
-
-TRIGGER_WORDS = ["здравствуйте", "добрый день", "доброе утро", "добрый вечер", "приветствую", "рад вас видеть", "доброго здоровья", "мое почтение", "привет", "приветик", "здорово", "хай", "хэллоу", "салют", "как дела", "чё как", "дарова", "здарова", "шалом", "привет-привет", "добро пожаловать", "мир вам", "салам алейкум", "namaste", "нихао", "мир дому твоему", "челом бью", "здравия желаю","йо","здравствуй","hi","hello"]
-@command_router.message(F.text.lower().in_(TRIGGER_WORDS))
-async def handler_hi(text: types.Message) -> None:
-    greetings = [
-        "👋 Привет! Напиши /start чтобы увидеть мои возможности",
-        "Здравствуйте! ✨ Для начала работы введите /start",
-        "Привет-привет! 😊 Введите /start для получения инструкций",
-        "Рад вас видеть! 🌟 Начните с команды /start",
-        "Приветствую! 🎬 Для доступа к функциям введите /start",
-        "Доброго времени суток! 💡 Введите /start чтобы продолжить",
-        "Привет! 🚀 Используйте /start для просмотра меню",
-        "Здарова! 😎 Напиши /start чтобы узнать что я умею",
-        "Хай! ⚡ Для старта работы введи /start",
-        "Добрый день! 📌 Начните с команды /start",
-        "Приветик! 🌈 Введи /start и увидишь все мои фишки",
-        "Приветствую вас! 💎 Команда /start откроет главное меню",
-        "👋 Дарова! Жми /start для получения информации",
-        "Здравствуй! 🎯 Напиши /start чтобы начать работу",
-        "Привет! 🔍 Узнай что я умею через команду /start"
-    ]
-    await text.answer(text=random.choice(greetings))
+    await state.clear()
 
 #@command_router.message(F.sticker)
 async def handler_sticker(text: types.Message):
@@ -146,19 +124,6 @@ async def handle_links(message: types.Message,state: FSMContext)->None:
     await state.set_state(Download.wait_format)
     await message.answer(text=text_ans,parse_mode="HTML",reply_markup=inline.format_keyboard)
 
-
-### ЛОГИКА ДЛЯ ПОЛУЧЕНИЯ ID ###
-
-# async def find_user_by_username(username: str):
-#     api_id = 12345  # Ваш API ID (получить на my.telegram.org)
-#     api_hash = "ваш_api_hash"  # Ваш API Hash
-#
-#     async with Client("my_account", api_id, api_hash) as app:
-#         try:
-#             user = await app.get_users(username)
-#             return user
-#         except Exception as e:
-#             return None
 
 
 
