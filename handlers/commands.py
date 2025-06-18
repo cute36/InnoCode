@@ -12,6 +12,8 @@ import re
 from states import Download,ID
 from aiogram.enums import ContentType
 from aiogram.fsm.context import FSMContext
+from downloader import download_audio
+import os
 # import SRC
 from handlers.source import texts
 from keyboards.inline import escape_keyboard
@@ -42,38 +44,6 @@ async def handler_sticker(text: types.Message):
     stickers = ["CAACAgIAAxkBAAOzaEwXDe9UAdcrvLIr9ka4tEffeMIAAtRcAAL_l2BKM4F7hnvAn-E2BA","CAACAgIAAxkBAAO1aEwXEEHTnaw_rmqgNbgO6ALrdQ8AAiRaAAJaUGFKk-Tak4_7Tag2BA","CAACAgIAAxkBAAO3aEwXEp_tIKxaSUf94QKUyp7jYsAAApBZAALY1GFKurbeu8UknXE2BA","CAACAgIAAxkBAAO5aEwXEywNfBzU6eNBllgoa-eHy20AAp5YAAIvDGBKCYbdO1qw2zo2BA","CAACAgIAAxkBAAO7aEwXFHrWSB4JjfEoylOpY_XGSBgAAv1dAAL0KWBKsErb7eNo7FI2BA","CAACAgIAAxkBAAO9aEwXFfafmW3z-NmnUwjy6qf9PakAAnlZAAIqaGFKVbQ1ypMu0N42BA","CAACAgIAAxkBAAO_aEwXFlNwZTPPm_8t_1HfZON1tboAAnNaAAJwtWFKW8ChVXuZ3ko2BA","CAACAgIAAxkBAAPBaEwXGOZFYtZg8h3KLDY3wkMKdTwAArpaAALunmhKisyIr6qxwuc2BA","CAACAgIAAxkBAAPDaEwXGZgwT30aF-lkKySVMi9XK2AAAgZZAALjmWBKG5vAPipLfuo2BA","CAACAgIAAxkBAAPFaEwXGtwYuVI0zm23QCMu8-4z4sYAArReAAIdJWhK_oyTwfJtE7s2BA","CAACAgIAAxkBAAPHaEwXG4wJt2yhYe1aA_Prlu2fMegAAp1eAAJrYWBK5gE4XU8C02Q2BA","CAACAgIAAxkBAAPJaEwXG1vJX0t7e5_vwxUYbmrolaoAAjteAAIPwWBKVHlUVG-vuFU2BA","CAACAgIAAxkBAAPLaEwXHAvEQAcUTR-CAAG7kDGbQb3YAAK1WgACAQZgSk5Q2YTbVWboNgQ","CAACAgIAAxkBAAPNaEwXHfroK4aw99GIn_O_sXv9L-cAAgphAAK5RWBKft4qfrpg9RU2BA","CAACAgIAAxkBAAPPaEwXHzG0GotsQ67Z5X1-E-p0BcwAAidtAAOn8Eu99IZh1I0pTzYE","CAACAgIAAxkBAAPRaEwXIHrmuAABAqlTonDm3Xru0dtvAAIGaQACcbTxS2Z3MjBm1jMgNgQ","CAACAgIAAxkBAAPTaEwXIG0cELLv4H2ugctGCdSE1wkAAvNhAAK-HfBLfNUk3DQ-aVk2BA","CAACAgIAAxkBAAPVaEwXIRswTB24wZr0bu-1C3pOqcgAAnt-AAKUT_FLewydwp-iTLY2BA","CAACAgIAAxkBAAPXaEwXIoC_8ZTdMn18mlV77ctnycYAAihsAAJZ0_BL44baC4-Mghc2BA"]
     await text.answer_sticker(random.choice(stickers))
 
-# @command_router.message(F.text == "MP3▶️",Download.wait_format)
-# async def handler_mp3(text: types.Message,state: FSMContext):
-#     text_mp3 = """
-#     🔄 <b>Конвертирую в MP3...</b>
-#
-#     Ваш аудиофайл готовится! Обычно это занимает 15-30 секунд.
-#
-#     📌 <i>Пока ждете:</i>
-#     • Проверьте громкость на устройстве
-#     • Убедитесь в стабильном интернет-соединении
-#
-#     Статус: <code>Извлекаем аудиодорожку...</code>
-#     """
-#     await text.answer(text=text_mp3,parse_mode="HTML",reply_markup=ReplyKeyboardRemove())
-#     await state.set_state(Download.wait_file)
-
-# @command_router.message(F.text == "MP4▶️",Download.wait_format)
-# async def handler_mp4(text: types.Message,state: FSMContext):
-#     text_mp4 = """
-#         🔄 <b>Конвертирую в MP4...</b>
-#
-#         Ваш видеофайл готовится! Обычно это занимает 15-30 секунд.
-#
-#         📌 <i>Пока ждете:</i>
-#         • Проверьте громкость на устройстве
-#         • Убедитесь в стабильном интернет-соединении
-#
-#         Статус: <code>Извлекаем видеодорожку...</code>
-#         """
-#     await text.answer(text=text_mp4,parse_mode="HTML",reply_markup=ReplyKeyboardRemove())
-#     await state.set_state(Download.wait_file)
-
 
 
 ### ЛОГИКА ПРОВЕРКИ ВАЛИДНОСТИ ССЫЛОК ###
@@ -88,41 +58,46 @@ def is_valid_url(url: str) -> bool:
 
 def is_supported_platform(url: str) -> bool:
     supported_domains = [
-        'youtube.com',
-        'youtu.be',
-        'tiktok.com',
-        'instagram.com',
-        'vk.com',
-        'dzen.ru'
         'soundcloud.com'
     ]
     domain = urlparse(url).netloc.lower()
     return any(d in domain for d in supported_domains)
 
 
-@command_router.message(F.text,Download.wait_link)
-async def handle_links(message: types.Message,state: FSMContext)->None:
+@command_router.message(F.text, Download.wait_link)
+async def handle_links(message: types.Message, state: FSMContext) -> None:
     user_url = message.text.strip()
 
     if not is_valid_url(user_url):
         await message.answer(
-            "❌ Это не похоже на валидную ссылку. Пример правильного формата:\nhttps://youtube.com/watch?v=...")
+            "❌ Это не похоже на валидную ссылку. Пример правильного формата:\nhttps://soundcloud.com/...")
         return
 
     if not is_supported_platform(user_url):
-        await message.answer("⚠️ Этот сервис пока не поддерживается. Работаем с:\nYouTube, TikTok, Soundcloud, VK, Instagram ")
+        await message.answer("⚠️ Этот сервис пока не поддерживается. Работаем с SoundCloud.")
         return
 
-    # ЕСЛИ ВАЩЕ ВСЕ КАЙФ
-    valid_url = user_url #ГОТОВАЯ ССЫЛКА
-    text_ans = """
-🔎 <b>Анализирую ссылку...</b>
-    <b>Выберите формат:</b>
-    - MP3▶️
-    - MP4▶️
-    """
-    await state.set_state(Download.wait_format)
-    await message.answer(text=text_ans,parse_mode="HTML",reply_markup=inline.format_keyboard)
+    # Уведомление о начале загрузки
+    processing_msg = await message.answer("🔎 <b>Загружаю аудио...</b>", parse_mode="HTML")
+
+    # Загружаем аудио
+    audio_path = await download_audio(user_url, message.from_user.id)
+
+    if audio_path:
+        # Отправляем аудио пользователю
+        audio_file = FSInputFile(audio_path)
+        await message.answer_audio(audio_file, reply_markup=inline.escape_keyboard_caption)
+
+        # Удаляем временный файл после отправки
+        try:
+            os.remove(audio_path)
+        except Exception as e:
+            print(f"Ошибка при удалении файла: {e}")
+    else:
+        await message.answer("❌ Не удалось загрузить аудио. Попробуйте другую ссылку.")
+
+    # Удаляем сообщение о загрузке
+    await processing_msg.delete()
 
 
 

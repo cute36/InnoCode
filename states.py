@@ -14,3 +14,5 @@ class Photo(StatesGroup):
     waiting_for_photo = State()
 class UsernameStates(StatesGroup):
     waiting_for_username = State()  # Состояние ожидания юзернейма
+class CircleVideo(StatesGroup):
+    waiting_for_video = State()  # Состояние ожидания видео от пользователя

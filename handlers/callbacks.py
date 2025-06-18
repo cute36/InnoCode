@@ -9,8 +9,10 @@ from keyboards import reply
 from handlers.source.texts import start_message,download_prompts,get_id_prompts,help_text,about_text
 from keyboards.inline import escape_keyboard, start_keyboard, escape_keyboard_caption
 from aiogram.types import FSInputFile
-from states import Download,ID,Sticker,Photo,UsernameStates
+from states import Download,ID,Sticker,Photo,UsernameStates,CircleVideo
 from id_database import get_user_by_username,save_user_to_db
+import os
+import subprocess
 
 callback_router = Router()
 
@@ -20,7 +22,7 @@ async def handle_cancel(callback: aiogram.types.CallbackQuery,state: FSMContext)
     await callback.message.edit_text(text=start_message(callback.from_user),parse_mode="HTML",reply_markup=start_keyboard)
     await state.clear()
 
-@callback_router.callback_query(F.data == "download_pressed")
+@callback_router.callback_query(F.data == "music_pressed")
 async def handle_download(callback: aiogram.types.CallbackQuery,state: FSMContext):
     await callback.answer("Обрабатывается...")
     await callback.message.delete()
@@ -35,6 +37,16 @@ async def handle_id(callback: aiogram.types.CallbackQuery,state: FSMContext):
     await callback.message.delete()
     await callback.message.answer(text=get_id_prompts,parse_mode="HTML",reply_markup=inline.id_keyboard)
     await state.set_state(ID.wait_id)
+
+@callback_router.callback_query(F.data == "circle_pressed")
+async def handle_circle(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer("Обрабатывается...")
+    await callback.message.delete()
+    await callback.message.answer(
+        "🌀 Отправьте мне видео, и я превращу его в кружок Telegram:",
+        reply_markup=inline.escape_keyboard
+    )
+    await state.set_state(CircleVideo.waiting_for_video)
 
 @callback_router.callback_query(F.data == "escape_id")
 async def handle_cancel(callback: aiogram.types.CallbackQuery,state: FSMContext):
@@ -68,40 +80,6 @@ async def handle_about(callback: aiogram.types.CallbackQuery):
     await callback.answer("Обрабатывается...")
     await callback.message.delete()
     await callback.message.answer(text=about_text,parse_mode="HTML",reply_markup=escape_keyboard)
-
-@callback_router.callback_query(F.data == "mp3",Download.wait_format)
-async def handler_mp3(callback: aiogram.types.CallbackQuery,state: FSMContext):
-    text_mp3 = """
-    🔄 <b>Конвертирую в MP3...</b>
-
-    Ваш аудиофайл готовится! Обычно это занимает 15-30 секунд.
-
-    📌 <i>Пока ждете:</i>
-    • Проверьте громкость на устройстве
-    • Убедитесь в стабильном интернет-соединении
-
-    Статус: <code>Извлекаем аудиодорожку...</code>
-    """
-    await callback.answer("Готовлю файл...")
-    await callback.message.answer(text=text_mp3,parse_mode="HTML")
-    await state.set_state(Download.wait_file)
-
-@callback_router.callback_query(F.data == "mp4",Download.wait_format)
-async def handler_mp4(callback: aiogram.types.CallbackQuery,state: FSMContext):
-    text_mp4 = """
-        🔄 <b>Конвертирую в MP4...</b>
-
-        Ваш видеофайл готовится! Обычно это занимает 15-30 секунд.
-
-        📌 <i>Пока ждете:</i>
-        • Проверьте громкость на устройстве
-        • Убедитесь в стабильном интернет-соединении
-
-        Статус: <code>Извлекаем видеодорожку...</code>
-        """
-    await callback.answer("Готовлю файл...")
-    await callback.message.answer(text=text_mp4, parse_mode="HTML")
-    await state.set_state(Download.wait_file)
 
 ### ОБРАБОТКА СВОЕГО АЙДИ ###
 @callback_router.callback_query(F.data == "user_id",ID.wait_id)
@@ -293,3 +271,4 @@ async def handle_non_username_input(message: types.Message):
     )
 
 
+#### ОБРАБОТЧИК В КРУЖОК #####

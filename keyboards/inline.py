@@ -13,8 +13,9 @@ help_keyboard = InlineKeyboardMarkup(
 start_keyboard = InlineKeyboardMarkup(
      inline_keyboard=[
          [
-             InlineKeyboardButton(text="️▶️Скачать видео",callback_data="download_pressed"),
+             InlineKeyboardButton(text="️▶️Скачать музыку",callback_data="music_pressed"),
              InlineKeyboardButton(text="🆔Получить ID",callback_data="id_pressed"),
+             InlineKeyboardButton(text="🌀 Кружок", callback_data="circle_pressed")
          ],
          [
              InlineKeyboardButton(text="🖐Наш канал",url="https://t.me/uroduzhir")
