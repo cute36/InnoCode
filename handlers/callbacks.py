@@ -13,6 +13,8 @@ from states import Download,ID,Sticker,Photo,UsernameStates,CircleVideo
 from id_database import get_user_by_username,save_user_to_db
 import os
 import subprocess
+import asyncio
+import shutil
 
 callback_router = Router()
 
@@ -272,3 +274,96 @@ async def handle_non_username_input(message: types.Message):
 
 
 #### ОБРАБОТЧИК В КРУЖОК #####
+
+
+@callback_router.message(CircleVideo.waiting_for_video, F.video)
+async def handle_circle_video(message: types.Message, state: FSMContext):
+    # Проверка размера видео
+    MAX_SIZE = 20 * 1024 * 1024  # 20 МБ
+    if message.video.file_size > MAX_SIZE:
+        await message.answer("❌ Видео должно быть меньше 20 МБ")
+        await state.clear()
+        return
+
+    # Пути к файлам
+    user_dir = f"downloads/{message.from_user.id}"
+    os.makedirs(user_dir, exist_ok=True)
+
+    input_path = f"{user_dir}/input.mp4"
+    output_path = f"{user_dir}/circle.mp4"
+    mask_path = "static/circle_mask.png"  # Ваша маска
+
+    try:
+        # 1. Скачиваем видео
+        await message.answer("📥 Загружаю видео...")
+        await message.bot.download(message.video.file_id, destination=input_path)
+
+        # 2. Обрабатываем видео в кружок
+        await message.answer("🌀 Создаю кружок...")
+        subprocess.run([
+            'ffmpeg', '-y',
+            '-i', input_path,
+            '-i', mask_path,
+            '-filter_complex',
+            '[0]scale=512:512:force_original_aspect_ratio=increase,'
+            'crop=512:512[vid];'
+            '[vid][1]alphamerge[out]',
+            '-map', '[out]',
+            '-map', '0:a?',
+            '-c:v', 'libx264',
+            '-preset', 'fast',
+            '-crf', '20',
+            '-c:a', 'aac',
+            '-movflags', '+faststart',
+            '-pix_fmt', 'yuva420p',  # Важно для прозрачности
+            output_path
+        ], check=True)
+
+        # 3. Отправляем как кружок
+        await message.answer_video_note(
+            video_note=FSInputFile(output_path),
+            duration=message.video.duration,
+            length=512  # Размер кружка (512x512)
+        )
+        await message.answer("Ваш кружок готов!👆",reply_markup=escape_keyboard)
+
+    except subprocess.CalledProcessError as e:
+        await message.answer("❌ Ошибка обработки видео",reply_markup=escape_keyboard)
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {str(e)}",reply_markup=escape_keyboard)
+    finally:
+        # Удаляем временные файлы
+        for file in [input_path, output_path]:
+            try:
+                if os.path.exists(file):
+                    os.remove(file)
+            except:
+                pass
+
+    await state.clear()
+
+@callback_router.message(CircleVideo.waiting_for_video)
+async def handle_non_video_input(message: types.Message):
+    """
+    Ловит всё, что не является видео, когда бот ждёт видео для кружка.
+    """
+    # Удаляем сообщение пользователя (если возможно)
+    try:
+        await message.delete()
+    except:
+        pass
+
+    # Отправляем предупреждение с кнопкой "Отмена"
+    warning = await message.answer(
+        "⚠️ Пожалуйста, отправьте именно <b>видео</b> (не фото, не файл).\n"
+        "Используйте кнопку \"📎\" в меню Telegram.",
+        reply_markup=escape_keyboard
+
+    )
+
+    # Удаляем предупреждение через 10 секунд
+    await asyncio.sleep(10)
+    try:
+        await warning.delete()
+    except:
+        pass

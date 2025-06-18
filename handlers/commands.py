@@ -5,29 +5,53 @@ from aiogram import F
 import random
 from handlers.source.texts import start_message,help_text,about_text
 from keyboards import inline
-from functools import wraps
-from aiogram.types import ReplyKeyboardRemove,FSInputFile, Message, User, Sticker, Contact, Document, PhotoSize
+from aiogram.types import FSInputFile
 from urllib.parse import urlparse
-import re
-from states import Download,ID
-from aiogram.enums import ContentType
+from states import Download
 from aiogram.fsm.context import FSMContext
 from downloader import download_audio
 import os
-# import SRC
-from handlers.source import texts
 from keyboards.inline import escape_keyboard
+from config import ADMIN_IDS
+from id_database import show_all_users
+from aiogram.filters import Command
 
 
 
 command_router = Router()
 
 
+@command_router.message(Command("stats"), F.from_user.id.in_(ADMIN_IDS))
+async def admin_stats(message: types.Message):
+    try:
+        # Получаем статистику из БД
+        stats = show_all_users(return_string=True)
 
-#@command_router.message(filters.Command("start"))
-async def handler_start(s: types.Message) -> None:
-    photo = FSInputFile("SRC/start2.jpg")
-    await s.answer_photo(photo,caption=start_message(s.from_user),reply_markup=inline.start_keyboard, parse_mode="HTML")
+        # Форматируем ответ
+        response = (
+            "📊 <b>Статистика бота</b>\n"
+            "------------------------\n"
+            f"{stats}\n"
+            f"👑 Админов: {len(ADMIN_IDS)}\n"
+            "------------------------\n"
+            "ℹ️ Полный дамп БД во вложении"
+        )
+
+        # Создаем временный файл с базой
+        with open("users_db_dump.txt", "w", encoding="utf-8") as f:
+            f.write(stats)
+
+        # Отправляем сообщение с файлом
+        await message.answer_document(
+            document=types.FSInputFile("users_db_dump.txt"),
+            caption=response,
+            parse_mode="HTML"
+        )
+    except Exception as e:
+        await message.answer(f"❌ Ошибка: {str(e)}")
+    finally:
+        if os.path.exists("users_db_dump.txt"):
+            os.remove("users_db_dump.txt")
 
 @command_router.message(filters.Command("about"))
 async def handler_about(a: types.Message,state: FSMContext) -> None:
@@ -78,7 +102,13 @@ async def handle_links(message: types.Message, state: FSMContext) -> None:
         return
 
     # Уведомление о начале загрузки
-    processing_msg = await message.answer("🔎 <b>Загружаю аудио...</b>", parse_mode="HTML")
+    text_ans = """
+    🔎 <b>Загружаю аудио...</b>
+
+    ⏳ Это может занять от 15 секунд до 2 минут
+    ⌛ Пожалуйста, подождите...
+    """
+    processing_msg = await message.answer(text=text_ans, parse_mode="HTML",reply_markup=escape_keyboard)
 
     # Загружаем аудио
     audio_path = await download_audio(user_url, message.from_user.id)
@@ -94,7 +124,7 @@ async def handle_links(message: types.Message, state: FSMContext) -> None:
         except Exception as e:
             print(f"Ошибка при удалении файла: {e}")
     else:
-        await message.answer("❌ Не удалось загрузить аудио. Попробуйте другую ссылку.")
+        await message.answer("❌ Не удалось загрузить аудио. Попробуйте другую ссылку.",reply_markup=escape_keyboard)
 
     # Удаляем сообщение о загрузке
     await processing_msg.delete()

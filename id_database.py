@@ -33,14 +33,22 @@ def add_user(user_id, username=None, first_name=None):
         conn.close()
 
 
-def show_all_users():
-    """Показывает всех пользователей из базы данных"""
+def show_all_users(return_string=False):
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM users")
     users = cursor.fetchall()
 
+    if return_string:
+        result = "Список пользователей:\n"
+        result += "ID       | Username       | First Name\n"
+        result += "-" * 40 + "\n"
+        for user in users:
+            result += f"{user[0]:<8} | {user[1] or 'None':<14} | {user[2] or 'None'}\n"
+        return result
+
+    # Старый вывод в консоль
     print("\nСписок пользователей:")
     print("ID       | Username       | First Name")
     print("-" * 40)
