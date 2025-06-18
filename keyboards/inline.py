@@ -1,5 +1,4 @@
 from aiogram.types import InlineKeyboardButton,InlineKeyboardMarkup
-from pyrogram.filters import inline_keyboard
 
 CHANNEL_LINK = "https://t.me/uroduzhir"  # Ссылка
 
