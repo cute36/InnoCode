@@ -90,7 +90,7 @@ async def check_subscription(callback: CallbackQuery, bot: Bot):
         if member.status in ['member', 'administrator', 'creator']:
             await callback.message.edit_text(
                 "✅ Спасибо за подписку! Теперь вам доступны все команды.",
-                reply_markup=None
+                reply_markup=inline.start
             )
             return
     except Exception as e:

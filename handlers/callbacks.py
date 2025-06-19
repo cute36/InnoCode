@@ -276,22 +276,84 @@ async def handle_non_username_input(message: types.Message):
 #### ОБРАБОТЧИК В КРУЖОК #####
 
 
+#@callback_router.message(CircleVideo.waiting_for_video, F.video)
+# async def handle_circle_video(message: types.Message, state: FSMContext):
+#     # Проверка размера видео
+#     MAX_SIZE = 20 * 1024 * 1024  # 20 МБ
+#     if message.video.file_size > MAX_SIZE:
+#         await message.answer("❌ Видео должно быть меньше 20 МБ")
+#         await state.clear()
+#         return
+#
+#     # Пути к файлам
+#     user_dir = f"downloads/{message.from_user.id}"
+#     os.makedirs(user_dir, exist_ok=True)
+#
+#     input_path = f"{user_dir}/input.mp4"
+#     output_path = f"{user_dir}/circle.mp4"
+#     mask_path = "static/circle_mask.png"  # Ваша маска
+#
+#     try:
+#         # 1. Скачиваем видео
+#         await message.answer("📥 Загружаю видео...")
+#         await message.bot.download(message.video.file_id, destination=input_path)
+#
+#         # 2. Обрабатываем видео в кружок
+#         await message.answer("🌀 Создаю кружок...")
+#         subprocess.run([
+#             'ffmpeg', '-y',
+#             '-i', input_path,
+#             '-i', mask_path,
+#             '-filter_complex',
+#             '[0]scale=512:512:force_original_aspect_ratio=increase,'
+#             'crop=512:512[vid];'
+#             '[vid][1]alphamerge[out]',
+#             '-map', '[out]',
+#             '-map', '0:a?',
+#             '-c:v', 'libx264',
+#             '-preset', 'fast',
+#             '-crf', '20',
+#             '-c:a', 'aac',
+#             '-movflags', '+faststart',
+#             '-pix_fmt', 'yuva420p',  # Важно для прозрачности
+#             output_path
+#         ], check=True)
+#
+#         # 3. Отправляем как кружок
+#         await message.answer_video_note(
+#             video_note=FSInputFile(output_path),
+#             duration=message.video.duration,
+#             length=512  # Размер кружка (512x512)
+#         )
+#         await message.answer("Ваш кружок готов!👆",reply_markup=escape_keyboard)
+#
+#     except subprocess.CalledProcessError as e:
+#         await message.answer("❌ Ошибка обработки видео",reply_markup=escape_keyboard)
+#     except Exception as e:
+#         await message.answer(f"❌ Ошибка: {str(e)}",reply_markup=escape_keyboard)
+#     finally:
+#         # Удаляем временные файлы
+#         for file in [input_path, output_path]:
+#             try:
+#                 if os.path.exists(file):
+#                     os.remove(file)
+#             except:
+#                 pass
+#
+#     await state.clear()
 @callback_router.message(CircleVideo.waiting_for_video, F.video)
 async def handle_circle_video(message: types.Message, state: FSMContext):
-    # Проверка размера видео
     MAX_SIZE = 20 * 1024 * 1024  # 20 МБ
     if message.video.file_size > MAX_SIZE:
         await message.answer("❌ Видео должно быть меньше 20 МБ")
         await state.clear()
         return
 
-    # Пути к файлам
     user_dir = f"downloads/{message.from_user.id}"
     os.makedirs(user_dir, exist_ok=True)
-
     input_path = f"{user_dir}/input.mp4"
     output_path = f"{user_dir}/circle.mp4"
-    mask_path = "static/circle_mask.png"  # Ваша маска
+    mask_path = "static/circle_mask.png"
 
     try:
         # 1. Скачиваем видео
@@ -315,30 +377,31 @@ async def handle_circle_video(message: types.Message, state: FSMContext):
             '-crf', '20',
             '-c:a', 'aac',
             '-movflags', '+faststart',
-            '-pix_fmt', 'yuva420p',  # Важно для прозрачности
+            '-pix_fmt', 'yuva420p',
             output_path
         ], check=True)
 
-        # 3. Отправляем как кружок
+        # 3. Отправляем кружок
         await message.answer_video_note(
             video_note=FSInputFile(output_path),
             duration=message.video.duration,
-            length=512  # Размер кружка (512x512)
+            length=512
         )
-        await message.answer("Ваш кружок готов!👆",reply_markup=escape_keyboard)
+        await message.answer("✅ Ваш кружок готов! 👆", reply_markup=escape_keyboard)
 
     except subprocess.CalledProcessError as e:
-        await message.answer("❌ Ошибка обработки видео",reply_markup=escape_keyboard)
+        await message.answer("❌ Ошибка обработки видео", reply_markup=escape_keyboard)
     except Exception as e:
-        await message.answer(f"❌ Ошибка: {str(e)}",reply_markup=escape_keyboard)
+        await message.answer(f"❌ Ошибка: {str(e)}", reply_markup=escape_keyboard)
     finally:
-        # Удаляем временные файлы
-        for file in [input_path, output_path]:
+        # Удаляем файлы в любом случае (даже если была ошибка)
+        for file_path in [input_path, output_path]:
             try:
-                if os.path.exists(file):
-                    os.remove(file)
-            except:
-                pass
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    print(f"Удалён временный файл: {file_path}")
+            except Exception as e:
+                print(f"Ошибка при удалении файла {file_path}: {e}")
 
     await state.clear()
 
