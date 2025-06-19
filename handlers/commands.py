@@ -3,7 +3,7 @@ from aiogram import filters
 from aiogram import  types
 from aiogram import F
 import random
-from handlers.source.texts import start_message,help_text,about_text
+from handlers.source.texts import help_text,about_text
 from keyboards import inline
 from aiogram.types import FSInputFile
 from urllib.parse import urlparse
@@ -11,10 +11,11 @@ from states import Download
 from aiogram.fsm.context import FSMContext
 from downloader import download_audio
 import os
-from keyboards.inline import escape_keyboard
+from keyboards.inline import escape_keyboard, escape_keyboard_caption
 from config import ADMIN_IDS
 from id_database import show_all_users
 from aiogram.filters import Command
+
 
 
 
@@ -45,7 +46,8 @@ async def admin_stats(message: types.Message):
         await message.answer_document(
             document=types.FSInputFile("users_db_dump.txt"),
             caption=response,
-            parse_mode="HTML"
+            parse_mode="HTML",
+            reply_markup=escape_keyboard_caption
         )
     except Exception as e:
         await message.answer(f"❌ Ошибка: {str(e)}")

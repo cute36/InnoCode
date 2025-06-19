@@ -1,18 +1,19 @@
 from aiogram import types
+from aiogram import BaseMiddleware
 from config import ADMIN_IDS
 
 
-class AdminMiddleware:
+class AdminMiddleware(BaseMiddleware):
     async def __call__(self, handler, event: types.Message | types.CallbackQuery, data):
-        if not isinstance(event, (types.Message, types.CallbackQuery)):
-            return await handler(event, data)
+        # Получаем список команд, требующих админских прав
+        admin_commands = {'/stats'}  # Добавьте сюда другие админские команды
 
-        user_id = event.from_user.id
-        if user_id not in ADMIN_IDS:
-            if isinstance(event, types.CallbackQuery):
-                await event.answer("❌ Доступ запрещен!", show_alert=True)
-            else:
-                await event.answer("❌ У вас нет прав доступа")
-            return
+        # Проверяем только команды из admin_commands
+        if isinstance(event, types.Message) and event.text:
+            command = event.text.split()[0].lower()
+            if command in admin_commands:
+                if event.from_user.id not in ADMIN_IDS:
+                    await event.answer("❌ Эта команда доступна только администраторам")
+                    return
 
         return await handler(event, data)

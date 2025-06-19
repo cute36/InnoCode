@@ -30,13 +30,13 @@ class SubscriptionMiddleware:
             member = await bot.get_chat_member(CHANNEL_ID, user_id)
             if member.status not in ['member', 'administrator', 'creator']:
                 if isinstance(event, CallbackQuery):
-                    await event.answer("❌ Сначала подпишитесь на канал!", show_alert=True)
+                    await event.answer("❌ Сначала подпишитесь на канал!", show_alert=True,reply_markup=inline.subscription_keyboard)
                 else:
-                    await event.answer("❌ Сначала подпишитесь на канал!")
+                    await event.answer("❌ Сначала подпишитесь на канал!",reply_markup=inline.subscription_keyboard)
                 return
         except Exception as e:
             print(f"Subscription check error: {e}")
-            await event.answer("⚠️ Ошибка проверки подписки")
+            await event.answer("⚠️ Ошибка проверки подписки",reply_markup=inline.subscription_keyboard)
             return
 
         return await handler(event, data)
@@ -96,7 +96,7 @@ async def check_subscription(callback: CallbackQuery, bot: Bot):
     except Exception as e:
         print(f"Error: {e}")
 
-    await callback.answer("❌ Вы ещё не подписались!", show_alert=True)
+    await callback.answer("❌ Вы ещё не подписались!", show_alert=True,reply_markup=inline.subscription_keyboard)
 
 
 @router.message(F.text == "Проверить доступ")
