@@ -5,7 +5,6 @@ from aiogram import F
 from aiogram.fsm.context import FSMContext
 import random
 from keyboards import inline
-from keyboards import reply
 from handlers.source.texts import start_message,download_prompts,get_id_prompts,help_text,about_text
 from keyboards.inline import escape_keyboard, start_keyboard, escape_keyboard_caption
 from aiogram.types import FSInputFile
@@ -21,7 +20,11 @@ callback_router = Router()
 @callback_router.callback_query(F.data == "start")
 async def handle_cancel(callback: aiogram.types.CallbackQuery,state: FSMContext):
     await callback.answer("Начинаем...")
-    await callback.message.edit_text(text=start_message(callback.from_user),parse_mode="HTML",reply_markup=start_keyboard)
+    await callback.message.delete()
+    photo = FSInputFile("SRC/download4.png")
+    await callback.message.answer_photo(photo, caption=download_prompts, parse_mode="HTML",
+                                        reply_markup=escape_keyboard_caption)
+    #await callback.message.edit_text(text=start_message(callback.from_user),parse_mode="HTML",reply_markup=start_keyboard)
     await state.clear()
 
 @callback_router.callback_query(F.data == "music_pressed")

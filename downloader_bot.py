@@ -11,8 +11,8 @@ from handlers.subscription import router,SubscriptionMiddleware
 
 dp = Dispatcher()
 
-dp.message.middleware(AntiFloodMiddleware(delay=2.0))
-dp.callback_query.middleware(AntiFloodMiddleware(delay=2.0))
+dp.message.middleware(AntiFloodMiddleware(delay=1.0))
+dp.callback_query.middleware(AntiFloodMiddleware(delay=1.0))
 
 
 dp.message.middleware(SubscriptionMiddleware())
