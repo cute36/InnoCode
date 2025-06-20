@@ -15,7 +15,8 @@ from keyboards.inline import escape_keyboard, escape_keyboard_caption
 from config import ADMIN_IDS
 from id_database import show_all_users
 from aiogram.filters import Command
-
+from constants import USER_AGENTS
+import yt_dlp
 
 
 
@@ -126,40 +127,135 @@ def is_supported_platform(url: str) -> bool:
 
 ### ПРОКСИ ХЭНДЛ НЕ УВЕРЕН ЧТО ЗАГРУЗИТ ССЫЛКУ
 
+#@command_router.message(F.text, Download.wait_link)
+# async def handle_links(message: types.Message, state: FSMContext):
+#     user_url = message.text.strip()
+#
+#     processing_msg = await message.answer("🔎 Начинаю загрузку... Это может занять несколько минут",reply_markup=escape_keyboard)
+#
+#     try:
+#         audio_path = await download_audio(user_url, message.from_user.id)
+#
+#         if audio_path:
+#             await message.answer_audio(
+#                 FSInputFile(audio_path),
+#             )
+#             await message.answer(text="Вот ваш аудиофайл!👆",reply_markup=escape_keyboard)
+#             try:
+#                 os.remove(audio_path)
+#             except Exception as e:
+#                 print(f"File deletion error: {e}")
+#         else:
+#             await message.answer(
+#                 "❌ Не удалось загрузить аудио после нескольких попыток. "
+#                 "Попробуйте позже или другую ссылку.",
+#                 reply_markup=escape_keyboard
+#             )
+#
+#     except Exception as e:
+#         await message.answer(
+#             "⚠️ Произошла непредвиденная ошибка. Администратор уже уведомлен.",
+#             reply_markup=escape_keyboard
+#         )
+#         logger.error(f"Critical error for {user_url}: {str(e)}")
+#     finally:
+#         await processing_msg.delete()
+
+
+async def get_track_info(url: str):
+    """Получение информации о треке без загрузки"""
+    ydl_opts = {
+        'quiet': True,
+        'extract_flat': True,
+        'skip_download': True,
+        'http_headers': {
+            'User-Agent': random.choice(USER_AGENTS),
+        }
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            return {
+                'title': info.get('title', 'Неизвестно'),
+                'duration': info.get('duration', 0),
+                'thumbnail': info.get('thumbnail'),
+                'uploader': info.get('uploader', 'Неизвестный исполнитель')
+            }
+    except Exception as e:
+        logger.error(f"Error getting track info: {e}")
+        return None
+
+
 @command_router.message(F.text, Download.wait_link)
 async def handle_links(message: types.Message, state: FSMContext):
     user_url = message.text.strip()
 
-    processing_msg = await message.answer("🔎 Начинаю загрузку... Это может занять несколько минут",reply_markup=escape_keyboard)
+    # Проверка URL
+    if not is_valid_url(user_url):
+        await message.answer("❌ Это не похоже на валидную ссылку.")
+        return
 
+    if not is_supported_platform(user_url):
+        await message.answer("⚠️ Поддерживается только SoundCloud.")
+        return
+
+    # Получаем информацию о треке
+    track_info = await get_track_info(user_url)
+    if not track_info:
+        await message.answer("❌ Не удалось получить информацию о треке.")
+        return
+
+    # Форматируем длительность
+    duration = int(track_info['duration'])
+    minutes, seconds = divmod(duration, 60)
+    formatted_duration = f"{minutes}:{seconds:02d}"
+
+    # Отправляем предпросмотр
+    preview_msg = (
+        "🎵 <b>Информация о треке:</b>\n"
+        f"├ <b>Название:</b> {track_info['title']}\n"
+        f"├ <b>Исполнитель:</b> {track_info['uploader']}\n"
+        f"└ <b>Длительность:</b> {formatted_duration}\n\n"
+        "🔎 Начинаю загрузку, это может занять пару минут..."
+    )
+
+    if track_info['thumbnail']:
+        try:
+            await message.answer_photo(
+                track_info['thumbnail'],
+                caption=preview_msg,
+                parse_mode="HTML",
+            )
+        except:
+            await message.answer(preview_msg, parse_mode="HTML")
+    else:
+        await message.answer(preview_msg, parse_mode="HTML")
+
+    # Загрузка аудио
     try:
         audio_path = await download_audio(user_url, message.from_user.id)
-
         if audio_path:
             await message.answer_audio(
                 FSInputFile(audio_path),
+                title=track_info['title'],
+                performer=track_info['uploader']
             )
-            await message.answer(text="Вот ваш аудиофайл!👆",reply_markup=escape_keyboard)
-            try:
-                os.remove(audio_path)
-            except Exception as e:
-                print(f"File deletion error: {e}")
+            await message.answer("✅ Готово! Вот твой тречок!👆", reply_markup=inline.escape_keyboard)
         else:
-            await message.answer(
-                "❌ Не удалось загрузить аудио после нескольких попыток. "
-                "Попробуйте позже или другую ссылку.",
-                reply_markup=escape_keyboard
-            )
-
+            await message.answer("❌ Не удалось загрузить аудио.", reply_markup=inline.escape_keyboard)
+    except ValueError as e:
+        await message.answer(f"❌ {str(e)}", reply_markup=inline.escape_keyboard)
     except Exception as e:
-        await message.answer(
-            "⚠️ Произошла непредвиденная ошибка. Администратор уже уведомлен.",
-            reply_markup=escape_keyboard
-        )
-        logger.error(f"Critical error for {user_url}: {str(e)}")
+        logger.error(f"Download failed: {e}")
+        await message.answer("⚠️ Произошла ошибка при загрузке.", reply_markup=inline.escape_keyboard   )
     finally:
-        await processing_msg.delete()
-
+        # Удаление временного файла
+        try:
+            if audio_path and os.path.exists(audio_path):
+                os.remove(audio_path)
+        except Exception as e:
+            logger.error(f"Error deleting file: {e}")
 
 
 
