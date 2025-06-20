@@ -1,10 +1,8 @@
-from aiogram import Bot, types, Router, F
+from aiogram import Bot, Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery
-from aiogram.fsm.context import FSMContext
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import ReplyKeyboardRemove,FSInputFile, Message, User, Sticker, Contact, Document, PhotoSize
-from handlers.source.texts import start_message,help_text,about_text
+from aiogram.types import  CallbackQuery
+from aiogram.types import FSInputFile, Message
+from handlers.source.texts import start_message
 from keyboards import inline
 from id_database import add_user
 from aiogram.fsm.context import FSMContext
@@ -52,6 +50,10 @@ class SubscriptionMiddleware:
 
 @router.message(Command("start"))
 async def cmd_start(message: Message, bot: Bot,state: FSMContext):
+    text= """
+    📢 <b>Для использования бота подпишитесь на канал!!!</b>
+    👉 <a href="https://t.me/uroduzhir">вандалы325</a> 👈
+    """
     try:
         # Добавляем пользователя в БД (без is_bot)
         add_user(
@@ -76,8 +78,9 @@ async def cmd_start(message: Message, bot: Bot,state: FSMContext):
 
 
     await message.answer(
-        f"Для использования бота подпишитесь на канал {CHANNEL_USERNAME}",
-        reply_markup=inline.subscription_keyboard
+        text=text,
+        reply_markup=inline.subscription_keyboard,
+        parse_mode="HTML"
     )
     await state.clear()
 

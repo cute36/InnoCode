@@ -4,6 +4,7 @@ from aiogram import Router
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 import random
+from handlers.source import texts
 from keyboards import inline
 from handlers.source.texts import start_message,download_prompts,get_id_prompts,help_text,about_text
 from keyboards.inline import escape_keyboard, start_keyboard, escape_keyboard_caption
@@ -21,9 +22,9 @@ callback_router = Router()
 async def handle_cancel(callback: aiogram.types.CallbackQuery,state: FSMContext):
     await callback.answer("Начинаем...")
     await callback.message.delete()
-    photo = FSInputFile("SRC/download4.png")
-    await callback.message.answer_photo(photo, caption=download_prompts, parse_mode="HTML",
-                                        reply_markup=escape_keyboard_caption)
+    photo = FSInputFile("SRC/start2.jpg")
+    await callback.message.answer_photo(photo, caption=start_message(callback.from_user), reply_markup=inline.start_keyboard,
+                               parse_mode="HTML")
     #await callback.message.edit_text(text=start_message(callback.from_user),parse_mode="HTML",reply_markup=start_keyboard)
     await state.clear()
 

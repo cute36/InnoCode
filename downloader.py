@@ -1,18 +1,7 @@
-# import yt_dlp
-# import os
-# import random
-# import time
-# from proxy_manager import proxy_manager
-# from aiogram.types import FSInputFile
-# from datetime import datetime
-# from constants import USER_AGENTS
-# import asyncio
 import yt_dlp
 import os
 import random
-import time
 from proxy_manager import proxy_manager
-from aiogram.types import FSInputFile
 from datetime import datetime, timedelta
 from constants import USER_AGENTS
 import asyncio
