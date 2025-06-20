@@ -166,26 +166,61 @@ async def get_track_info(url: str):
     """Получение информации о треке без загрузки"""
     ydl_opts = {
         'quiet': True,
-        'extract_flat': True,
+        'extract_flat': False,
         'skip_download': True,
+        'force_ipv4': True,
+        'socket_timeout': 15,
+        'extract_info': True,
         'http_headers': {
             'User-Agent': random.choice(USER_AGENTS),
+            'Referer': 'https://soundcloud.com/',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
         }
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
+
+            # Если это плейлист, берем первый трек
+            if '_type' in info and info['_type'] == 'playlist':
+                if info['entries']:
+                    info = info['entries'][0]
+
+            # Получаем базовую информацию
+            title = info.get('title', 'Неизвестный трек')
+            uploader = info.get('uploader', 'Неизвестный исполнитель')
+
+            # Обработка длительности
+            duration = info.get('duration', 0)
+            if duration:
+                duration = int(duration)  # Преобразуем в целое число
+                minutes, seconds = divmod(duration, 60)
+                formatted_duration = f"{minutes}:{seconds:02d}"
+            else:
+                formatted_duration = "Неизвестно"
+
+            # Получаем лучшее доступное изображение
+            thumbnail = None
+            for thumb in ['thumbnail', 'thumbnails']:
+                if thumb in info:
+                    if isinstance(info[thumb], list) and info[thumb]:
+                        thumbnail = info[thumb][0]['url']
+                    elif isinstance(info[thumb], str):
+                        thumbnail = info[thumb]
+                    if thumbnail:
+                        break
+
             return {
-                'title': info.get('title', 'Неизвестно'),
-                'duration': info.get('duration', 0),
-                'thumbnail': info.get('thumbnail'),
-                'uploader': info.get('uploader', 'Неизвестный исполнитель')
+                'title': title,
+                'duration': duration,
+                'formatted_duration': formatted_duration,
+                'thumbnail': thumbnail,
+                'uploader': uploader
             }
     except Exception as e:
-        logger.error(f"Error getting track info: {e}")
+        print(f"Error getting track info: {e}")
         return None
-
 
 @command_router.message(F.text, Download.wait_link)
 async def handle_links(message: types.Message, state: FSMContext):
@@ -200,23 +235,22 @@ async def handle_links(message: types.Message, state: FSMContext):
         await message.answer("⚠️ Поддерживается только SoundCloud.")
         return
 
+    # Добавляем https:// если его нет
+    if not user_url.startswith(('http://', 'https://')):
+        user_url = f'https://{user_url}'
+
     # Получаем информацию о треке
     track_info = await get_track_info(user_url)
     if not track_info:
-        await message.answer("❌ Не удалось получить информацию о треке.")
+        await message.answer("❌ Не удалось получить информацию о треке. Пожалуйста, попробуйте другую ссылку.")
         return
-
-    # Форматируем длительность
-    duration = int(track_info['duration'])
-    minutes, seconds = divmod(duration, 60)
-    formatted_duration = f"{minutes}:{seconds:02d}"
 
     # Отправляем предпросмотр
     preview_msg = (
         "🎵 <b>Информация о треке:</b>\n"
         f"├ <b>Название:</b> {track_info['title']}\n"
         f"├ <b>Исполнитель:</b> {track_info['uploader']}\n"
-        f"└ <b>Длительность:</b> {formatted_duration}\n\n"
+        f"└ <b>Длительность:</b> {track_info['formatted_duration']}\n\n"
         "🔎 Начинаю загрузку, это может занять пару минут..."
     )
 
@@ -241,21 +275,21 @@ async def handle_links(message: types.Message, state: FSMContext):
                 title=track_info['title'],
                 performer=track_info['uploader']
             )
-            await message.answer("✅ Готово! Вот твой тречок!👆", reply_markup=inline.escape_keyboard)
+            await message.answer("✅ Готово! Вот твой трек!👆", reply_markup=inline.escape_keyboard)
         else:
             await message.answer("❌ Не удалось загрузить аудио.", reply_markup=inline.escape_keyboard)
     except ValueError as e:
         await message.answer(f"❌ {str(e)}", reply_markup=inline.escape_keyboard)
     except Exception as e:
-        logger.error(f"Download failed: {e}")
-        await message.answer("⚠️ Произошла ошибка при загрузке.", reply_markup=inline.escape_keyboard   )
+        print(f"Download failed: {e}")
+        await message.answer("⚠️ Произошла ошибка при загрузке.", reply_markup=inline.escape_keyboard)
     finally:
         # Удаление временного файла
         try:
             if audio_path and os.path.exists(audio_path):
                 os.remove(audio_path)
         except Exception as e:
-            logger.error(f"Error deleting file: {e}")
+            print(f"Error deleting file: {e}")
 
 
 

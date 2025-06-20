@@ -17,10 +17,10 @@ dp.callback_query.middleware(AntiFloodMiddleware(delay=1.0))
 
 dp.message.middleware(SubscriptionMiddleware())
 dp.callback_query.middleware(SubscriptionMiddleware())
-
+#### ПРОВЕРКА АДМИНОЙ
 dp.message.middleware(AdminMiddleware())
 dp.callback_query.middleware(AdminMiddleware())
-
+### ВКЛЮЧЕНИЕ РОУТЕРОВ
 dp.include_router(command_router)
 dp.include_router(callback_router)
 dp.include_router(router)
